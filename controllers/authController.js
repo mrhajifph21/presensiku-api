@@ -66,36 +66,3 @@ exports.login = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-
-
-exports.clockIn = async (req, res) => {
-    // Data ini nanti dikirim dari HP (Flutter)
-    const { latitude, longitude, photo_url } = req.body;
-    const userId = req.user.id; // Didapet dari middleware Satpam tadi
-
-    try {
-        // Cek apakah hari ini udah absen masuk (biar gak double)
-        const [existing] = await db.query(
-            'SELECT * FROM attendances WHERE user_id = ? AND DATE(clock_in_time) = CURDATE()',
-            [userId]
-        );
-
-        if (existing.length > 0) {
-            return res.status(400).json({ message: 'Lu udah absen masuk hari ini cuy!' });
-        }
-
-        // Tentukan status terlambat atau hadir (Misal batas masuk jam 08:00)
-        // Buat MVP kita set 'hadir' dulu defaultnya
-        const status = 'hadir';
-
-        // Simpan ke database
-        await db.query(
-            'INSERT INTO attendances (user_id, clock_in_time, latitude, longitude, photo_url, status) VALUES (?, NOW(), ?, ?, ?, ?)',
-            [userId, latitude, longitude, photo_url, status]
-        );
-
-        res.status(201).json({ message: 'Absen masuk berhasil direkam!' });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
-};
