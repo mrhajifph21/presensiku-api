@@ -1,18 +1,20 @@
-    const express = require('express');
+const express = require('express');
 const router = express.Router();
 const leaveController = require('../controllers/leaveController');
-const authMiddleware = require('../middleware/authMiddleware');
 
-// URL: http://localhost:3000/api/leaves/submit
-router.post('/submit', authMiddleware, leaveController.submitLeave);
+// PERBAIKAN: Hilangkan kurung kurawal {} karena middleware diexport secara langsung
+const verifyToken = require('../middleware/authMiddleware'); 
 
-// URL: http://localhost:3000/api/leaves/history
-router.get('/history', authMiddleware, leaveController.getLeaveHistory);
+// 1. Ambil riwayat cuti spesifik user (WAJIB ditaruh di atas route /:id)
+router.get('/history', verifyToken, leaveController.getMyLeaves);
 
-// URL: http://localhost:3000/api/leaves/all-pending (KHUSUS HRD)
-router.get('/all-pending', authMiddleware, leaveController.getAllPendingLeaves);
+// 2. Ambil semua data cuti untuk Web (HRD / Supervisor)
+router.get('/', verifyToken, leaveController.getLeaves);
 
-// URL: http://localhost:3000/api/leaves/:id/status (KHUSUS HRD)
-router.put('/:id/status', authMiddleware, leaveController.updateLeaveStatus);
+// 3. Kirim pengajuan cuti baru dari HP
+router.post('/', verifyToken, leaveController.createLeave);
+
+// 4. Update status cuti (Approve / Reject oleh Supervisor)
+router.put('/:id', verifyToken, leaveController.updateLeaveStatus);
 
 module.exports = router;

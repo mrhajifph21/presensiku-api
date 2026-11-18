@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+uploads/*
+!uploads/selfie/
+uploads/selfie/*
+!uploads/selfie/.gitkeep
+tests
+.git
+curl
+*.md

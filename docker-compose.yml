@@ -1,0 +1,40 @@
+# PSI-256 #10: run the PresensIKu API on the Docker host (192.168.1.201).
+# Secrets (DB password, JWT secret) come from a .env NEXT TO THIS FILE or
+# the shell environment - never commit them.
+#
+#   PRESENSIKU_JWT_SECRET=<fresh 64+ hex chars - rotate, the old one leaked in copies>
+#   PRESENSIKU_DB_PASSWORD=<password of the scoped `presensiku` MySQL account>
+#   PRESENSIKU_ZK_DB_USER=<MySQL account on THIS host (201) for db_hris.zkteco_logs>
+#   PRESENSIKU_ZK_DB_PASSWORD=<its password>
+#
+# First run:  docker compose up -d --build
+# Logs:       docker compose logs -f api
+services:
+  api:
+    build: .
+    container_name: presensiku-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: 192.168.1.202
+      DB_USER: presensiku
+      DB_PASSWORD: ${PRESENSIKU_DB_PASSWORD}
+      DB_NAME: db_hris
+      JWT_SECRET: ${PRESENSIKU_JWT_SECRET}
+      # PSI-355: zkteco_logs lives in db_hris on THIS host; the container
+      # reaches it via the host's LAN IP (same pattern as DB_HOST above).
+      ZK_DB_HOST: 192.168.1.201
+      ZK_DB_USER: ${PRESENSIKU_ZK_DB_USER}
+      ZK_DB_PASSWORD: ${PRESENSIKU_ZK_DB_PASSWORD}
+      ZK_DB_NAME: db_hris
+      # record_time must line up with machine punches (WIB), not container UTC.
+      TZ: Asia/Jakarta
+      # Dashboard origin once it is served from this host (update to the
+      # real URL, e.g. http://192.168.1.201:8080).
+      CORS_ORIGIN: ${PRESENSIKU_CORS_ORIGIN:-http://localhost:5173}
+      OFFICE_LATITUDE: "-6.358836432908493"
+      OFFICE_LONGITUDE: "106.96916932374036"
+      OFFICE_RADIUS_METER: "500"
+    volumes:
+      - ./uploads:/app/uploads
